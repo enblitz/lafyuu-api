@@ -4,11 +4,20 @@ API 1: `login`
 
 ```bash
 #param
-username
-passowrd
+emailid
 ```
+
 Output:
 
 ```json
-
+{
+    "status": {
+        "message": "Success",
+        "code": 200,
+        "error": false
+    },
+    "data": {
+        }
+}
+```
 
