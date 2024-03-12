@@ -1,8 +1,5 @@
 # Lafyuu-api
 
-
-
-
 ● Sign In
     ● login
     ● login_with_social_media
