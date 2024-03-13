@@ -3,8 +3,8 @@ const nodemailer = require('nodemailer')
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'divyarajsinhrayjada3@gmail.com',
-        pass: 'utww muua tlup hcps'
+        user: process.env.NODEMAILER_EMAIL,
+        pass: process.env.NODEMAILER_PASS
     },
     tls: {
         rejectUnauthorized: false
@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 const sendForgotPassEmail = async (email, password) => {
     const mailOptions = {
-        from: 'divyarajsinhrayjada3@gmail.com',
+        from: process.env.NODEMAILER_EMAIL,
         to: email,
         subject: 'Forgot Password',
         text: `your new passWord is: ${password}`
