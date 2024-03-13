@@ -39,4 +39,16 @@ app.get('/health', async (req, res) => {
 
 app.use(userRouter)
 
+
+app.use((error, req, res, next) => {
+    error.statusCode = error.statusCode || 400;
+    error.message = error.message || "Error";
+    res.status(error.statusCode).json({
+        message: error.message,
+        code: error.statusCode,
+        error: true
+    });
+});
+
+
 module.exports = app
