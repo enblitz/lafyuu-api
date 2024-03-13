@@ -21,7 +21,7 @@ app.get('/health', async (req, res) => {
         console.log('All models synchronized successfully.')
         res.status(200).json({
             status: {
-                message: "Success",
+                message: "Connection has been established successfully.",
                 code: 200,
                 error: false
             }
