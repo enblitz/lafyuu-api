@@ -4,18 +4,18 @@ const sequelize = require('../config/dbConnect')
 
 const User = sequelize.define('user', {
   // Define user model fields here
-  userID: {
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     autoIncrement: true,
     primaryKey: true,
     unique: true
   },
-  firstName: {
+  first_name: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  lastName: {
+  last_name: {
     type: DataTypes.STRING,
     allowNull: false
   },
