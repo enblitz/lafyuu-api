@@ -15,24 +15,31 @@ exports.signUp = async (req, res) => {
 
 exports.loginCtrl = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { username, password } = req.body;
 
-        const user = await User.findOne({ where: { email: email } })
+        const user = await User.findOne({
+            where: { email: username }
+        })
 
         if (!user) {
             throw new Error('User Not Register!')
         }
 
-        if(user.password !== password){
-            throw new Error ('password is incorrect!')
+        if (user.password !== password) {
+            throw new Error('password is incorrect!')
         }
 
-        const token  = await ganerateAuthToken(user.user_id)
+        const token = await ganerateAuthToken(user.user_id)
 
         await Token.create({
             user_id: user.user_id,
             active_token: token
         })
+
+        // console.log(user.toJSON());
+        const userDATA = user.toJSON()
+        
+        delete userDATA.password
 
         res.status(200).json({
             status: {
@@ -41,7 +48,10 @@ exports.loginCtrl = async (req, res, next) => {
                 error: false
             },
             data: {
-                user,
+                user : {
+                    username,
+                    ...userDATA
+                },
                 token
             }
         })
@@ -56,7 +66,7 @@ exports.getUserProfileCtrl = async (req, res, next) => {
         const user_id = req.user.user_id
 
         const profile = await User.findOne({
-            where: {user_id},
+            where: { user_id },
             attributes: {
                 exclude: ['password']
             }
@@ -80,9 +90,9 @@ exports.sendForgotPass = async (req, res, next) => {
     try {
         const email = req.body.email
 
-        const user = await User.findOne({where : {email}})
+        const user = await User.findOne({ where: { email } })
 
-        if(!user) throw new Error('user not register yet!')
+        if (!user) throw new Error('user not register yet!')
 
         const newPassWord = generatePass(8)
 
