@@ -17,7 +17,7 @@ exports.validPassword = (password) => {
 }
 
 exports.validStringInput = (value) => {
-    if(!value.match(/^[a-zA-Z]+$/)) throw new Error ('please provide only alphabetic characters')
+    if(!value.match(/^[a-zA-Z -]+$/)) throw new Error ('please provide only alphabetic characters')
     return value
 }
 
