@@ -11,14 +11,18 @@ const User = sequelize.define('user', {
     primaryKey: true,
     unique: true
   },
-  first_name: {
+  full_name: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  last_name: {
+  user_name: {
     type: DataTypes.STRING,
-    allowNull: false
+    // allowNull: false
   },
+  // last_name: {
+  //   type: DataTypes.STRING,
+  //   allowNull: false
+  // },
   password: {
     type: DataTypes.STRING,
     allowNull: false
@@ -29,15 +33,15 @@ const User = sequelize.define('user', {
   },
   gender: {
     type: DataTypes.STRING,
-    allowNull: false
   },
   DOB: {
     type: DataTypes.STRING,
-    allowNull: false
   },
-  mobileNumber: {
+  mobile_number: {
     type: DataTypes.STRING,
-    allowNull: false
+  },
+  user_profile: {
+    type: DataTypes.STRING
   }
 }, {
   timestamps: false

@@ -1,15 +1,55 @@
+const { cloudinaryUpload } = require('../config/multerConfig');
+const cloudinary = require('../config/cloudinaryConfig')
 const sendForgotPassEmail = require('../emailConfig/sendEmail');
 const Token = require('../models/login');
 const User = require('../models/user');
 const ganerateAuthToken = require('../utils/genearteToken');
 const generatePass = require('../utils/generatePassword');
+const { validEmail, validPassword, validStringInput, validDOB, validMobileNumber } = require('../utils/validation');
 
-exports.signUp = async (req, res) => {
+exports.signUp = async (req, res, next) => {
     try {
-        await User.create(req.body)
-        console.log('success');
+        const { full_name, email, password, re_password } = req.body
+
+        const findUser = await User.findOne({ where: { email } })
+
+        if (findUser) throw new Error('you are already register with this email!')
+
+        const valid_email = validEmail(email)
+        const validPass = validPassword(password)
+        const validName = validStringInput(full_name)
+
+        if (re_password !== validPass) {
+            throw new Error('please provide same password!')
+        }
+
+        const user = await User.create({
+            full_name: validName,
+            email: valid_email,
+            password: validPass,
+            user_name: email
+        })
+
+        const userDATA = user.toJSON()
+
+        res.status(200).json({
+            status: {
+                message: 'registration success!',
+                code: 200,
+                error: false
+            },
+            data: {
+                user: {
+                    ...userDATA,
+                    re_password
+                }
+            }
+        })
+
+        // console.log('success');
     } catch (error) {
-        console.log('error');
+        // console.log(error.message);
+        next(error)
     }
 }
 
@@ -38,7 +78,7 @@ exports.loginCtrl = async (req, res, next) => {
 
         // console.log(user.toJSON());
         const userDATA = user.toJSON()
-        
+
         delete userDATA.password
 
         res.status(200).json({
@@ -48,7 +88,7 @@ exports.loginCtrl = async (req, res, next) => {
                 error: false
             },
             data: {
-                user : {
+                user: {
                     username,
                     ...userDATA
                 },
@@ -78,7 +118,9 @@ exports.getUserProfileCtrl = async (req, res, next) => {
                 code: 200,
                 error: false
             },
-            data: profile
+            data: {
+                user: profile
+            }
         })
     } catch (error) {
         next(error)
@@ -111,3 +153,63 @@ exports.sendForgotPass = async (req, res, next) => {
     }
 }
 
+exports.updateProfile = async (req, res, next) => {
+    try {
+        const { full_name, newPassWord, re_password, email, gender, DOB, mobile_number } = req.body
+
+        const user_id = req.user.user_id
+
+        const user = await User.findOne({ where: { user_id } })
+
+        if (full_name) {
+            user.full_name = validStringInput(full_name);
+        }
+
+        if (newPassWord ) {
+            user.password = validPassword(newPassWord);
+        }
+
+        if(re_password !== newPassWord){
+            throw new Error('please provide same password!')
+        }
+
+        if (email) {
+            user.email = validEmail(email);
+        }
+
+        if (gender) {
+            user.gender = gender;
+        }
+
+        if (DOB) {
+            user.DOB = validDOB(DOB);
+        }
+
+        if (mobile_number) {
+            const isMobile = validMobileNumber(mobile_number)
+            user.mobile_number = isMobile;
+        }
+
+        if (req.file) {
+            user.user_profile = req.file.path;
+        }
+
+        // console.log(user.toJSON())
+
+        await user.save()
+
+        res.status(200).json({
+            status: {
+                message: "Successfully profile update!",
+                code: 200,
+                error: false
+            },
+            data: {
+                user
+            }
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
