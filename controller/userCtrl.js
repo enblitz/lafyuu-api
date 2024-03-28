@@ -1,11 +1,14 @@
-const { cloudinaryUpload } = require('../config/multerConfig');
-const cloudinary = require('../config/cloudinaryConfig')
 const sendForgotPassEmail = require('../emailConfig/sendEmail');
 const Token = require('../models/login');
 const User = require('../models/user');
 const ganerateAuthToken = require('../utils/genearteToken');
 const generatePass = require('../utils/generatePassword');
 const { validEmail, validPassword, validStringInput, validDOB, validMobileNumber } = require('../utils/validation');
+const { hashPass, verifyPass } = require('../utils/hashPass');
+const { gender } = require('../utils/checkGender');
+const { sendOTP } = require('../utils/sendOTP');
+const { genearteOTP } = require('../utils/generateOTP');
+const { generateOTPToken } = require('../utils/generateOTPToken');
 
 exports.signUp = async (req, res, next) => {
     try {
@@ -23,10 +26,12 @@ exports.signUp = async (req, res, next) => {
             throw new Error('please provide same password!')
         }
 
+        const hash = await hashPass(validPass)
+
         const user = await User.create({
             full_name: validName,
             email: valid_email,
-            password: validPass,
+            password: hash,
             user_name: email
         })
 
@@ -40,8 +45,7 @@ exports.signUp = async (req, res, next) => {
             },
             data: {
                 user: {
-                    ...userDATA,
-                    re_password
+                    ...userDATA
                 }
             }
         })
@@ -65,8 +69,10 @@ exports.loginCtrl = async (req, res, next) => {
             throw new Error('User Not Register!')
         }
 
-        if (user.password !== password) {
-            throw new Error('password is incorrect!')
+        const verifyPassword = await verifyPass(password, user.password)
+
+        if (!verifyPassword) {
+            throw new Error('invalid password!')
         }
 
         const token = await ganerateAuthToken(user.user_id)
@@ -89,7 +95,6 @@ exports.loginCtrl = async (req, res, next) => {
             },
             data: {
                 user: {
-                    username,
                     ...userDATA
                 },
                 token
@@ -155,7 +160,7 @@ exports.sendForgotPass = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { full_name, newPassWord, re_password, email, gender, DOB, mobile_number } = req.body
+        const { full_name, gender_id, DOB, mobile_number } = req.body
 
         const user_id = req.user.user_id
 
@@ -165,20 +170,16 @@ exports.updateProfile = async (req, res, next) => {
             user.full_name = validStringInput(full_name);
         }
 
-        if (newPassWord ) {
-            user.password = validPassword(newPassWord);
-        }
-
-        if(re_password !== newPassWord){
-            throw new Error('please provide same password!')
-        }
-
-        if (email) {
-            user.email = validEmail(email);
-        }
-
-        if (gender) {
-            user.gender = gender;
+        let userGender
+        let verifygender
+        if (gender_id) {
+            verifygender = gender.find((data) => data.id === parseInt(gender_id))
+            // console.log(verifygender);
+            if (!verifygender) {
+                throw new Error('Please Provide Valid gender ID!')
+            }
+            userGender = verifygender.gender
+            user.gender = userGender
         }
 
         if (DOB) {
@@ -194,9 +195,10 @@ exports.updateProfile = async (req, res, next) => {
             user.user_profile = req.file.path;
         }
 
-        // console.log(user.toJSON())
-
         await user.save()
+
+        const userPass = user.toJSON()
+        delete userPass.password
 
         res.status(200).json({
             status: {
@@ -205,8 +207,119 @@ exports.updateProfile = async (req, res, next) => {
                 error: false
             },
             data: {
+                user: {
+                    ...userPass,
+                    gender: verifygender
+                }
+            }
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+exports.changePass = async (req, res, next) => {
+    try {
+        const { old_password, new_password } = req.body
+        const user_id = req.user.user_id
+        const user = await User.findOne({ where: { user_id } })
+
+        if (!old_password) throw new Error('please provide old passsword!')
+
+        const verify_pass = await verifyPass(old_password, user.password)
+        if (!verify_pass) throw new Error('The old password provided is incorrect.');
+        if (!new_password) throw new Error('please provide a new password!')
+
+        if (new_password === old_password) throw new Error('The new password must be different from the old password.')
+
+        const isStrong = validPassword(new_password)
+        const encrypt = await hashPass(isStrong)
+        user.password = encrypt
+        await user.save()
+
+        res.status(200).json({
+            status: {
+                message: "Password changed successfully!",
+                code: 200,
+                error: false
+            },
+            data: {
                 user
             }
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.sendOtpToMobile = async (req, res, next) => {
+    try {
+        const { mobile_number } = req.body;
+
+        const user_id = req.user.user_id
+
+        const user = await User.findOne({ where: { user_id } })
+
+        if (!mobile_number) throw new Error('Please Provide Mobile Number!')
+
+        const isValidMobileNumber = validMobileNumber(mobile_number)
+
+        const otp = genearteOTP(1000, 9999)
+        // console.log(otp)
+        const otpToken = generateOTPToken(otp)
+        await sendOTP(otp, mobile_number)
+
+        user.mobile_number = isValidMobileNumber.phone
+        await user.save()
+
+        // console.log(isValidMobileNumber)
+
+        res.status(200).json({
+            status: {
+                message: "otp send on your mobile number!",
+                code: 200,
+                error: false
+            },
+            data: {
+                user,
+                otpToken
+            }
+        })
+    } catch (error) {
+        next(error)
+    }
+};
+
+
+exports.verifyOTPByUser = async (req, res, next) => {
+    try {
+        const user_id = req.user.user_id
+
+        const user = await User.findOne({ where: { user_id } })
+        const { otp } = req.body
+        const sendOTP = req.otp
+        // console.log(sendOTP)
+
+        if (!otp) {
+            throw new Error('Please Enter OTP!')
+        }
+
+        if (otp.length !== 4) {
+            throw new Error('Please Provide 4 Digit OTP!')
+        }
+
+        if (parseInt(otp) !== sendOTP) throw new Error('Invalid OTP!')
+
+        res.status(200).json({
+            status: {
+                message: "OTP Verify successfully!",
+                code: 200,
+                error: false
+            },
+            data: user
         })
 
     } catch (error) {

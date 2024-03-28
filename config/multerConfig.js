@@ -14,9 +14,12 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({
     storage,
+    limits : {
+        fileSize: 2 * 1024 * 1024
+    },
     fileFilter(req, file, cb) {
         if (!file.originalname.match(/\.(jpg|png|jpeg)/)) {
-            return cb(new Error('please upload an image'))
+            return cb(new Error('please upload an image (jpg, png, jpeg)'))
         }
         cb(undefined, true)
     }
