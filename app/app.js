@@ -1,6 +1,8 @@
 const express = require('express')
 const sequelize = require('../config/dbConnect')
 const userRouter = require('../router/userRouter')
+const bannerRouer = require('../router/banner')
+const categoryRouter = require('../router/category')
 
 const app = express()
 
@@ -38,7 +40,8 @@ app.get('/health', async (req, res) => {
 })
 
 app.use(userRouter)
-
+app.use(bannerRouer)
+app.use(categoryRouter)
 
 app.use((error, req, res, next) => {
     error.statusCode = error.statusCode || 400;
