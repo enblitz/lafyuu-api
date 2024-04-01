@@ -13,6 +13,7 @@ const { generateOTPToken } = require('../utils/generateOTPToken');
 exports.signUp = async (req, res, next) => {
     try {
         const { full_name, email, password, re_password } = req.body
+        let {userRole} = req.body
 
         const findUser = await User.findOne({ where: { email } })
 
@@ -32,7 +33,8 @@ exports.signUp = async (req, res, next) => {
             full_name: validName,
             email: valid_email,
             password: hash,
-            user_name: email
+            user_name: email,
+            role: userRole
         })
 
         const userDATA = user.toJSON()

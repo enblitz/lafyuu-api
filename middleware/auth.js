@@ -14,7 +14,6 @@ const auth = async (req, res, next) => {
         const user = await User.findOne({ where: { user_id: userToken.user_id } })
         if (!user) throw new Error('user not found!')
         req.user = user
-
         next()
     } catch (error) {
         res.status(401).json({

@@ -1,4 +1,5 @@
-const Banner = require('../models/banner')
+const Banner = require('../models/banner');
+const { checkValidStringType } = require('../utils/validation');
 
 exports.addBanner = async (req, res, next) => {
     try {
@@ -9,6 +10,8 @@ exports.addBanner = async (req, res, next) => {
         if (!banner_title) {
             throw new Error('Please Provide a Banner Title!');
         }
+
+        checkValidStringType(banner_title)
 
         if (!banner_countdown || isNaN(Date.parse(banner_countdown))) {
             throw new Error('Please Provide a Valid Banner Countdown Date!');
@@ -54,7 +57,8 @@ exports.addBanner = async (req, res, next) => {
 exports.getBanner = async (req, res, next) => {
     try {
         const serachAllBanner = await Banner.findAll()
-        if(serachAllBanner.length < 0){
+
+        if(serachAllBanner.length <= 0){
             throw new Error('No Banner Avaible!')
         }
 
@@ -68,6 +72,51 @@ exports.getBanner = async (req, res, next) => {
                 serachAllBanner
             }
         })
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+exports.deletBanner = async (req, res, next) => {
+    try {
+        const {banner_id} = req.query
+
+        let banner
+        let find_banner
+        if(banner_id){
+            find_banner = await Banner.findOne({where: {banner_id}})
+
+            if(!find_banner){
+                throw new Error(`No Banner Availbale for Banner Id : ${banner_id}`)
+            }
+            
+            banner = await Banner.destroy({where: {banner_id}})
+
+            res.status(200).json({
+                status: {
+                    message: `Successfully Banner Delete for banner_id: ${banner_id}`,
+                    code: 200,
+                    error: false
+                }
+            })
+        }else{
+            find_banner = await Banner.findAll()
+
+            if(find_banner.length === 0){
+                throw new Error('No Banner Available!')
+            }
+
+            banner = await Banner.truncate()
+
+            res.status(200).json({
+                status: {
+                    message: `Successfully All Banner Deleted!`,
+                    code: 200,
+                    error: false
+                }
+            })
+        }
     } catch (error) {
         next(error)
     }
