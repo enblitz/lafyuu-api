@@ -12,7 +12,7 @@ const { generateOTPToken } = require('../utils/generateOTPToken');
 
 exports.signUp = async (req, res, next) => {
     try {
-        const { full_name, email, password, re_password } = req.body
+        const { full_name, email, password } = req.body
         let {userRole} = req.body
 
         const findUser = await User.findOne({ where: { email } })
@@ -23,9 +23,11 @@ exports.signUp = async (req, res, next) => {
         const validPass = validPassword(password)
         const validName = validStringInput(full_name)
 
-        if (re_password !== validPass) {
-            throw new Error('please provide same password!')
-        }
+        //check password is same as enter password
+
+        // if (re_password !== validPass) {
+        //     throw new Error('please provide same password!')
+        // }
 
         const hash = await hashPass(validPass)
 
@@ -61,10 +63,10 @@ exports.signUp = async (req, res, next) => {
 
 exports.loginCtrl = async (req, res, next) => {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
         const user = await User.findOne({
-            where: { email: username }
+            where: { email }
         })
 
         if (!user) {
@@ -77,12 +79,20 @@ exports.loginCtrl = async (req, res, next) => {
             throw new Error('invalid password!')
         }
 
-        const token = await ganerateAuthToken(user.user_id)
+        //check token already exist or not
+        const checkToken = await Token.findOne({where: {user_id : user.user_id}})
+        let token
 
-        await Token.create({
-            user_id: user.user_id,
-            active_token: token
-        })
+        if(checkToken){
+            token = checkToken.active_token
+        }else{
+            token = await ganerateAuthToken(user.user_id)
+
+            await Token.create({
+                user_id: user.user_id,
+                active_token: token
+            })
+        }
 
         // console.log(user.toJSON());
         const userDATA = user.toJSON()
@@ -146,8 +156,8 @@ exports.sendForgotPass = async (req, res, next) => {
         const newPassWord = generatePass(8)
 
         await sendForgotPassEmail(user.email, newPassWord)
-
-        user.password = newPassWord
+        // console.log(newPassWord)
+        user.password = await hashPass(newPassWord)
         await user.save()
 
         res.status(200).json({
@@ -300,8 +310,12 @@ exports.verifyOTPByUser = async (req, res, next) => {
     try {
         const user_id = req.user.user_id
 
+        const {mobile_number, otp} = req.body
         const user = await User.findOne({ where: { user_id } })
-        const { otp } = req.body
+
+        if(user.mobile_number !== mobile_number){
+            throw new Error('Incorrect mobile number!')
+        }
         const sendOTP = req.otp
         // console.log(sendOTP)
 

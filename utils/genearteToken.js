@@ -8,7 +8,7 @@ const ganerateAuthToken = async (id) => {
         throw new Error('User Not Register Yet!')
     }
 
-    const token = jwt.sign({id}, 'usertokonforlafyuuApp')
+    const token = jwt.sign({id}, process.env.JWT_SECURE_KEY, {expiresIn: '12h'})
 
     return token
 }
