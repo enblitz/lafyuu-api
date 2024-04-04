@@ -3,6 +3,7 @@ const sequelize = require('../config/dbConnect')
 const userRouter = require('../router/userRouter')
 const bannerRouer = require('../router/banner')
 const categoryRouter = require('../router/category')
+const main_categoryRouter = require('../router/main_category')
 
 const app = express()
 
@@ -42,14 +43,17 @@ app.get('/health', async (req, res) => {
 app.use(userRouter)
 app.use(bannerRouer)
 app.use(categoryRouter)
+app.use(main_categoryRouter)
 
 app.use((error, req, res, next) => {
     error.statusCode = error.statusCode || 400;
     error.message = error.message || "Error";
     res.status(error.statusCode).json({
-        message: error.message,
-        code: error.statusCode,
-        error: true
+        status: {
+            message: error.message,
+            code: error.statusCode,
+            error: true
+        }
     });
 });
 
