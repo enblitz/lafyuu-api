@@ -1,5 +1,5 @@
 const express = require('express')
-const {signUp, loginCtrl, getUserProfileCtrl, sendForgotPass, updateProfile, demoUpload, changePass, sendOtpToMobile, verifyOTPByUser} = require('../controller/userCtrl')
+const {signUp, loginCtrl, getUserProfileCtrl, sendForgotPass, updateProfile, demoUpload, changePass, sendOtpToMobile, verifyOTPByUser, sendOTPToEmail, verifyEmailOTPFromUser} = require('../controller/userCtrl')
 const auth = require('../middleware/auth')
 const { upload } = require('../config/multerConfig')
 const veriftOTP = require('../middleware/verifyOTP')
@@ -14,6 +14,8 @@ userRouter.post('/update/profile', auth, upload.single('user_profile'),updatePro
 userRouter.post('/change/password', auth, changePass)
 userRouter.post('/sendOTP',auth, sendOtpToMobile)
 userRouter.post('/verify/otp', auth, veriftOTP, verifyOTPByUser)
+userRouter.post('/sendOTP/email', auth, sendOTPToEmail)
+userRouter.post('/verify/email/otp', auth, veriftOTP, verifyEmailOTPFromUser)
 
 
 module.exports = userRouter
