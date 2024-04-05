@@ -1,4 +1,4 @@
-const sendForgotPassEmail = require('../emailConfig/sendEmail');
+const { sendForgotPassEmail, sendOTPToEmail } = require('../emailConfig/sendEmail');
 const Token = require('../models/login');
 const User = require('../models/user');
 const ganerateAuthToken = require('../utils/genearteToken');
@@ -13,7 +13,7 @@ const { generateOTPToken } = require('../utils/generateOTPToken');
 exports.signUp = async (req, res, next) => {
     try {
         const { full_name, email, password } = req.body
-        let {userRole} = req.body
+        let { userRole } = req.body
 
         const findUser = await User.findOne({ where: { email } })
 
@@ -80,12 +80,12 @@ exports.loginCtrl = async (req, res, next) => {
         }
 
         //check token already exist or not
-        const checkToken = await Token.findOne({where: {user_id : user.user_id}})
+        const checkToken = await Token.findOne({ where: { user_id: user.user_id } })
         let token
 
-        if(checkToken){
+        if (checkToken) {
             token = checkToken.active_token
-        }else{
+        } else {
             token = await ganerateAuthToken(user.user_id)
 
             await Token.create({
@@ -267,6 +267,8 @@ exports.changePass = async (req, res, next) => {
     }
 }
 
+//send otp on mobile
+
 exports.sendOtpToMobile = async (req, res, next) => {
     try {
         const { mobile_number } = req.body;
@@ -291,7 +293,7 @@ exports.sendOtpToMobile = async (req, res, next) => {
 
         res.status(200).json({
             status: {
-                message: "otp send on your mobile number!",
+                message: "OTP send on your mobile number!",
                 code: 200,
                 error: false
             },
@@ -310,10 +312,10 @@ exports.verifyOTPByUser = async (req, res, next) => {
     try {
         const user_id = req.user.user_id
 
-        const {mobile_number, otp} = req.body
+        const { mobile_number, otp } = req.body
         const user = await User.findOne({ where: { user_id } })
 
-        if(user.mobile_number !== mobile_number){
+        if (user.mobile_number !== mobile_number) {
             throw new Error('Incorrect mobile number!')
         }
         const sendOTP = req.otp
@@ -328,6 +330,85 @@ exports.verifyOTPByUser = async (req, res, next) => {
         }
 
         if (parseInt(otp) !== sendOTP) throw new Error('Invalid OTP!')
+
+        res.status(200).json({
+            status: {
+                message: "OTP Verify successfully!",
+                code: 200,
+                error: false
+            },
+            data: user
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+//send otp on email for when update email
+
+exports.sendOTPToEmail = async (req, res, next) => {
+    try {
+        const { email } = req.body
+
+        const user_id = req.user.user_id
+
+        const user = await User.findOne({ where: { user_id } })
+
+        if (!user) throw new Error('please login first!')
+        const isEmail = validEmail(email)
+
+        const otp = genearteOTP(1000, 9999)
+        // console.log(otp)
+        const otpToken = generateOTPToken(otp)
+        await sendOTPToEmail(isEmail, otp)
+
+        user.email = isEmail
+        user.user_name = isEmail
+
+        await user.save()
+
+        res.status(200).json({
+            status: {
+                message: "OTP Send on your Email Address!",
+                code: 200,
+                error: false
+            },
+            data: {
+                user,
+                otpToken
+            }
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+//verfiy otp from email
+
+exports.verifyEmailOTPFromUser = async (req, res, next) => {
+    try {
+        const { email, otp } = req.body
+
+        const user_id = req.user.user_id
+        const verifyOTP = req.otp
+
+        const user = await User.findOne({ where: { user_id } })
+
+        if (!email) throw new Error('Plase Provide Email!')
+
+        if (user.email !== email) {
+            throw new Error('Invalid Email Address!')
+        }
+
+        if (!otp) throw new Error('Please provide OTP!')
+
+        if (otp.length !== 4) throw new Error('Please Provide 4 digit OTP!')
+
+        if (verifyOTP !== parseInt(otp)) {
+            throw new Error('Invalid OTP!')
+        }
 
         res.status(200).json({
             status: {

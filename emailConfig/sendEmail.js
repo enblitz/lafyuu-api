@@ -26,4 +26,19 @@ const sendForgotPassEmail = async (email, password) => {
     }
 }
 
-module.exports = sendForgotPassEmail
+const sendOTPToEmail = async (email, OTP) => {
+    const mailOptions = {
+        from: process.env.NODEMAILER_EMAIL,
+        to: email,
+        subject: 'OTP Verification',
+        text: `your 4 digit OTP is : ${OTP}`
+    }
+    try {
+        await transporter.sendMail(mailOptions)
+    } catch (error) {
+        // console.log(`Nodemailer error sending email to ${user.email}`, error)
+        throw new Error(`Error sending forgot password email: ${error}`)
+    }
+}
+
+module.exports = {sendForgotPassEmail, sendOTPToEmail}
