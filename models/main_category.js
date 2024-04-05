@@ -12,7 +12,7 @@ const Main_Category = sequelize.define('Main_Category', {
         unique: true,
     },
     parent_category_name: {
-        type: DataTypes.ENUM('Man Fashion', 'Woman Fashion'),
+        type: DataTypes.STRING,
         allowNull: false
     }
 },{
