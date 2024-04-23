@@ -84,7 +84,8 @@ exports.loginCtrl = async (req, res, next) => {
         let token
 
         if (checkToken) {
-            token = checkToken.active_token
+            token = await ganerateAuthToken(user.user_id)
+            checkToken.active_token = token
         } else {
             token = await ganerateAuthToken(user.user_id)
 
